@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+
+    <main class="container">
+        <div class="dashboard-header">
+            <h2>Welcome, <%= user.profile.firstName || user.username %></h2>
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <h4>Courses</h4>
+                    <p><%= courses.length %></p>
+                </div>
+                <div class="stat-card">
+                    <h4>Current Streak</h4>
+                    <p><%= user.profile.streaks.current %> days</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Problems Solved</h4>
+                    <p><%= user.profile.codingStats.problemsSolved || 0 %></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-grid">
+            <!-- Enrolled Courses -->
+            <section class="dashboard-section">
+                <h3>My Courses</h3>
+                <div class="courses-grid">
+                    <% if (courses.length > 0) { %>
+                        <% courses.forEach(course => { %>
+                            <div class="course-card">
+                                <h4><%= course.title %></h4>
+                                <p class="course-code"><%= course.code %></p>
+                                <div class="course-info">
+                                    <p>Instructor: <%= course.instructor.profile.firstName %> <%= course.instructor.profile.lastName %></p>
+                                    <p>Type: <%= course.type.charAt(0).toUpperCase() + course.type.slice(1) %></p>
+                                </div>
+                                <div class="course-progress">
+                                    <div class="progress-bar">
+                                        <div class="progress" style="width: <%= course.progress || 0 %>%"></div>
+                                    </div>
+                                    <span><%= course.progress || 0 %>% Complete</span>
+                                </div>
+                                <a href="/student/courses/<%= course._id %>" class="btn btn-primary">View Course</a>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="empty-state">
+                            <p>You are not enrolled in any courses yet.</p>
+                            <a href="/student/courses" class="btn btn-primary">Browse Courses</a>
+                        </div>
+                    <% } %>
+                </div>
+            </section>
+
+            <!-- Recent Activity -->
+            <section class="dashboard-section">
+                <h3>Recent Activity</h3>
+                <div class="activity-timeline">
+                    <% if (user.recentActivity && user.recentActivity.length > 0) { %>
+                        <% user.recentActivity.forEach(activity => { %>
+                            <div class="activity-item">
+                                <span class="activity-time"><%= activity.timestamp %></span>
+                                <p class="activity-text"><%= activity.description %></p>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <p>No recent activity</p>
+                    <% } %>
+                </div>
+            </section>
+
+            <!-- Skill Progress -->
+            <section class="dashboard-section">
+                <h3>Skill Progress</h3>
+                <canvas id="skillsChart"></canvas>
+            </section>
+        </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script>
+        // Initialize skills chart
+        const ctx = document.getElementById('skillsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Problem Solving', 'DSA', 'Web Dev', 'Python', 'Java'],
+                datasets: [{
+                    label: 'Your Skills',
+                    data: [
+                        <%= user.profile.skills.map(s => s.level || 0).join(', ') %>
+                    ],
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    pointBackgroundColor: 'rgb(54, 162, 235)'
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+
+    <style>
+        .dashboard-header {
+            margin-bottom: 2rem;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .dashboard-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .course-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .course-progress {
+            margin: 1rem 0;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress {
+            background: #007bff;
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .activity-timeline {
+            margin-top: 1rem;
+        }
+
+        .activity-item {
+            padding: 1rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .activity-time {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+        }
+    </style>
+</body>
+</html>
